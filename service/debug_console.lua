@@ -117,20 +117,33 @@ local function console_main_loop(stdin, print)
 end
 
 skynet.start(function()
-	local listen_socket = socket.listen (ip, port)
-	skynet.error("Start debug console at " .. ip .. ":" .. port)
-	socket.start(listen_socket , function(id, addr)
-		local function print(...)
+	if port ~= nil then
+		local listen_socket = socket.listen (ip, port)
+		skynet.error("Start debug console at " .. ip .. ":" .. port)
+		socket.start(listen_socket , function(id, addr)
+			local function print(...)
+				local t = { ... }
+				for k,v in ipairs(t) do
+					t[k] = tostring(v)
+				end
+				socket.write(id, table.concat(t,"\t"))
+				socket.write(id, "\n")
+			end
+			socket.start(id)
+			skynet.fork(console_main_loop, id , print)
+		end)
+	end
+	if not skynet.getenv "daemon" then
+		local function localprint(...)
 			local t = { ... }
 			for k,v in ipairs(t) do
 				t[k] = tostring(v)
 			end
-			socket.write(id, table.concat(t,"\t"))
-			socket.write(id, "\n")
+			print(table.concat(t,"\t"))
 		end
-		socket.start(id)
-		skynet.fork(console_main_loop, id , print)
-	end)
+		local id = socket.stdin()
+		skynet.fork(console_main_loop, id , localprint)
+	end
 end)
 
 function COMMAND.help()
@@ -439,3 +452,7 @@ function COMMAND.profactive(flag)
 	local active = memory.profactive()
 	return "heap profilling is ".. (active and "active" or "deactive")
 end
+
+
+local inject = require "Common.Core.TelnetCommand"
+inject(COMMAND)
