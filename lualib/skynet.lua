@@ -781,6 +781,10 @@ function skynet.stat(what)
 	return c.intcommand("STAT", what)
 end
 
+function skynet.crosstime(ti)
+	c.command("CROSSTIME",ti)
+end
+
 function skynet.task(ret)
 	if ret == nil then
 		local t = 0
