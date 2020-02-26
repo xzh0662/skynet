@@ -527,6 +527,14 @@ cmd_starttime(struct skynet_context * context, const char * param) {
 }
 
 static const char *
+cmd_crosstime(struct skynet_context * context, const char * param) {
+	char * tiptr = NULL;
+	uint32_t ti = strtol(param, &tiptr, 10);
+	skynet_cross_time(ti);
+	return NULL;
+}
+
+static const char *
 cmd_abort(struct skynet_context * context, const char * param) {
 	skynet_handle_retireall();
 	return NULL;
@@ -653,6 +661,7 @@ static struct command_func cmd_funcs[] = {
 	{ "GETENV", cmd_getenv },
 	{ "SETENV", cmd_setenv },
 	{ "STARTTIME", cmd_starttime },
+	{ "CROSSTIME", cmd_crosstime },
 	{ "ABORT", cmd_abort },
 	{ "MONITOR", cmd_monitor },
 	{ "STAT", cmd_stat },

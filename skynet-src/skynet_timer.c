@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <sys/time.h>
 
 #if defined(__APPLE__)
 #include <AvailabilityMacros.h>
@@ -51,6 +52,7 @@ struct timer {
 	uint32_t starttime;
 	uint64_t current;
 	uint64_t current_point;
+	uint32_t cross_time;
 };
 
 static struct timer * TI = NULL;
@@ -233,33 +235,34 @@ skynet_timeout(uint32_t handle, int time, int session) {
 // centisecond: 1/100 second
 static void
 systime(uint32_t *sec, uint32_t *cs) {
-#if !defined(__APPLE__) || defined(AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER)
-	struct timespec ti;
-	clock_gettime(CLOCK_REALTIME, &ti);
-	*sec = (uint32_t)ti.tv_sec;
-	*cs = (uint32_t)(ti.tv_nsec / 10000000);
-#else
+// #if !defined(__APPLE__) || defined(AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER)
+// 	struct timespec ti;
+// 	clock_gettime(CLOCK_REALTIME, &ti);
+// 	*sec = (uint32_t)ti.tv_sec;
+// 	*cs = (uint32_t)(ti.tv_nsec / 10000000);
+// #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	*sec = tv.tv_sec;
 	*cs = tv.tv_usec / 10000;
-#endif
+//#endif
 }
 
 static uint64_t
 gettime() {
 	uint64_t t;
-#if !defined(__APPLE__) || defined(AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER)
-	struct timespec ti;
-	clock_gettime(CLOCK_MONOTONIC, &ti);
-	t = (uint64_t)ti.tv_sec * 100;
-	t += ti.tv_nsec / 10000000;
-#else
+// #if !defined(__APPLE__) || defined(AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER)
+// 	struct timespec ti;
+// 	clock_gettime(CLOCK_MONOTONIC, &ti);
+// 	t = (uint64_t)ti.tv_sec * 100;
+// 	t += ti.tv_nsec / 10000000;
+// #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	t = (uint64_t)tv.tv_sec * 100;
 	t += tv.tv_usec / 10000;
-#endif
+//#endif
+	t += TI->cross_time;
 	return t;
 }
 
@@ -287,8 +290,15 @@ skynet_starttime(void) {
 
 uint64_t 
 skynet_now(void) {
-	return TI->current;
+	return TI->current + TI->cross_time;
 }
+
+void
+skynet_cross_time(uint32_t ti) {
+	TI->cross_time += ti;
+	TI->current_point = gettime();
+}
+
 
 void 
 skynet_timer_init(void) {

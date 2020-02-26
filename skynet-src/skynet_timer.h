@@ -10,4 +10,6 @@ uint64_t skynet_thread_time(void);	// for profile, in micro second
 
 void skynet_timer_init(void);
 
+void skynet_cross_time(uint32_t);
+
 #endif
